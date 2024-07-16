@@ -13,9 +13,11 @@ const db = new StreamService()
 const saveToDB = async () => {
   console.log(new Date(Date.now()).toLocaleTimeString(), "Starting service to update stream status")
   const unlock = await UpdateQueue.Lock()
+  console.log("Got lock")
   let count = 0;
   if (!UpdateQueue.isEmpty()) {
     const updateBeforeTime = (+new Date()) - TT_TIME
+    console.log(updateBeforeTime)
     while (!UpdateQueue.isEmpty()) {
       const element = UpdateQueue.addToDB(updateBeforeTime)
       if (!element) break
@@ -30,6 +32,8 @@ const saveToDB = async () => {
         UpdateQueue.add(element.streamId, updateBeforeTime, element.status)
       }
     }
+  } else {
+    console.log("Queue is empty")
   }
   unlock()
   console.log(count, "stream status updated",)

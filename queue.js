@@ -64,7 +64,7 @@ class PriorityQueue {
     return this.items.length === 0
   }
   front() {
-    if (this.isEmpty) return null
+    if (this.isEmpty()) return null
     return this.items[0]
   }
   // return if threshold timestamp has reached
