@@ -12,6 +12,7 @@ const db = new StreamService()
 
 const saveToDB = async () => {
   const unlock = await UpdateQueue.Lock()
+  let count = 0;
   if (!UpdateQueue.isEmpty()) {
     const updateBeforeTime = (+new Date()) - TT_TIME
 
@@ -21,6 +22,7 @@ const saveToDB = async () => {
 
       try {
         await db.updateRecord(element.streamId, element.status)
+        count++
         console.info("Updated status for stream ", element.streamId, element.status)
       }
       catch (err) {
@@ -30,6 +32,7 @@ const saveToDB = async () => {
     }
   }
   unlock()
+  console.log(count, "Update stream status from queue",)
   setTimeout(saveToDB, DB_SAVE_TIME)
   return
 }
@@ -44,12 +47,10 @@ app.get('/', (req, res) => {
   res.send('Web hook running')
 })
 
-const addToQueue = async (body) => {
-
+const addToQueue = async (body, status) => {
   const unlock = await UpdateQueue.Lock()
-  UpdateQueue.add(body.id, body.timestamp, true)
+  UpdateQueue.add(body.id, body.timestamp, status)
   unlock()
-
 }
 
 app.post('/update', async (req, res) => {
@@ -62,13 +63,13 @@ app.post('/update', async (req, res) => {
     // timestamp = required to make changes in db
     switch (body.action) {
       case "liveStreamStarted":
-        console.log("Starting live stream", body.id, body.timestamp)
-        addToQueue(body)
+        // console.log("Starting live stream", body.id, body.timestamp)
+        addToQueue(body, true)
         break;
 
       case "liveStreamEnded":
-        console.log("Live stream ended", body.id, body.timestamp)
-        addToQueue(body)
+        // console.log("Live stream ended", body.id, body.timestamp)
+        addToQueue(body, false)
         break;
 
       default:

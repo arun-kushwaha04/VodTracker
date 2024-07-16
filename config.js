@@ -11,4 +11,4 @@ module.exports.ERR_SYNC_TIME = 1000 * 60 * 1 // interval after with syncronizer 
 
 //threshold time, change will be reflect after this time
 module.exports.TT_TIME = 1000 * 30 //30s // time after which element in update queue will be considered for update in db
-module.exports.DB_SAVE_TIME = 1000 * 60 //30s // interval after which we update status for elements in queue
+module.exports.DB_SAVE_TIME = 1000 * 60 //60s // interval after which we update status for elements in queue

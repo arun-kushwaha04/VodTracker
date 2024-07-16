@@ -51,6 +51,8 @@ class PriorityQueue {
     if (!contain) {
       this.items.push(element)
     }
+
+    console.log("New element added to queue", streamId, timestamp, status)
   }
   remove() {
     let element
