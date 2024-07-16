@@ -1,10 +1,10 @@
-import { VodService } from './db';
 
 require('dotenv').config()
 
 const fs = require('fs-extra');
 const path = require('path');
 const { getVideoDurationInSeconds } = require('get-video-duration')
+const { VodService } = require('./db');
 
 const { FOLDER_PATH, TOKEN, CHECK_INTERVAL, PREV_FILES, RECORDED_SEGMENT_SIZE, DELAY, SYNC_TIME, ERR_SYNC_TIME } = require("./config")
 
@@ -382,4 +382,4 @@ const main = () => {
   })
 }
 
-export default main
+module.exports.main = main

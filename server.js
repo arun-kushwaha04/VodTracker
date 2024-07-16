@@ -2,15 +2,16 @@
 //
 require('dotenv').config()
 const express = require('express');
-const { default: main } = require('./main');
+const { main } = require('./main');
 const { TT_TIME, DB_SAVE_TIME } = require("./config");
 const { StreamService } = require('./db');
+const { PriorityQueue } = require('./queue');
 
 const UpdateQueue = new PriorityQueue()
 const db = new StreamService()
 
 const saveToDB = async () => {
-  const unlock = await this.mutex()
+  const unlock = await UpdateQueue.Lock()
   if (!UpdateQueue.isEmpty()) {
     const updateBeforeTime = (+new Date()) - TT_TIME
 

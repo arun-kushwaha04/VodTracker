@@ -28,6 +28,9 @@ class PriorityQueue {
     this.items = []
     this.mutex = new Mutex()
   }
+  Lock() {
+    return this.mutex.lock()
+  }
   add(streamId, timestamp, status) {
     let element = new QueueElement(streamId, timestamp, status)
     let contain = false
@@ -68,4 +71,8 @@ class PriorityQueue {
     if (f && f.timestamp <= tt) return this.remove()
     return null
   }
+}
+
+module.exports = {
+  PriorityQueue
 }

@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client')
 
-export class StreamService {
+class StreamService {
   constructor() {
     this.prisma = new PrismaClient();
   }
@@ -15,7 +15,7 @@ export class StreamService {
   })
 }
 
-export class VodService {
+class VodService {
   constructor() {
     this.prisma = new PrismaClient();
   }
@@ -52,4 +52,9 @@ export class VodService {
     }
   })
 
+}
+
+module.exports = {
+  VodService,
+  StreamService
 }
