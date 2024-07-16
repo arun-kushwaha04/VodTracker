@@ -11,13 +11,14 @@ const UpdateQueue = new PriorityQueue()
 const db = new StreamService()
 
 const saveToDB = async () => {
+  console.log(new Date(Date.now()).toLocaleTimeString(), "Starting service to update stream status")
   const unlock = await UpdateQueue.Lock()
   let count = 0;
   if (!UpdateQueue.isEmpty()) {
     const updateBeforeTime = (+new Date()) - TT_TIME
 
     while (!UpdateQueue.isEmpty()) {
-      const element = addToDB(updateBeforeTime)
+      const element = UpdateQueue.addToDB(updateBeforeTime)
       if (!element) break
 
       try {
@@ -32,7 +33,7 @@ const saveToDB = async () => {
     }
   }
   unlock()
-  console.log(count, "Update stream status from queue",)
+  console.log(count, "stream status updated",)
   setTimeout(saveToDB, DB_SAVE_TIME)
   return
 }

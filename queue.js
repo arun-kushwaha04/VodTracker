@@ -52,7 +52,7 @@ class PriorityQueue {
       this.items.push(element)
     }
 
-    console.log("New element added to queue", streamId, timestamp, status)
+    console.log("New stream added to queue", streamId, timestamp, status)
   }
   remove() {
     let element
