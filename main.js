@@ -117,7 +117,7 @@ async function deleteVod(vodId) {
       if (!data.success) throw new Error("Failed to delete vods", vodId)
       resolve(true)
     } catch (err) {
-      console.error("Error while getting vod id for", file.name, err)
+      console.error("Error while removing vod", err)
       reject(file.name)
     }
   })
