@@ -96,7 +96,7 @@ async function getVodId(file) {
       if (data.length == 0) throw new Error("Failed to get vods")
       resolve(data[0].vodId)
     } catch (err) {
-      console.log("Error while getting vod id for", file.name, err)
+      console.error("Error while getting vod id for", file.name, err)
       reject(file.name)
     }
   })
@@ -129,10 +129,10 @@ async function storeFileInfo(file, fileInfo, duration, vodId) {
         duration
       )
 
-      console.log("Stored vod", file.name)
+      console.info("Stored vod", file.name)
       resolve(true)
     } catch (err) {
-      console.log("Failed to add this vod to db", file.name, err)
+      console.error("Failed to add this vod to db", file.name, err)
       reject(err)
     }
 
@@ -148,14 +148,14 @@ const addVodToStore = (file) => {
       await storeFileInfo(file, fileInfo, duration, vodId);
       resolve(true)
     } catch (err) {
-      console.log(err)
+      console.error(err)
       reject(file)
     }
   })
 }
 
 async function addVodsToDB() {
-  console.log(new Date(Date.now()).toLocaleTimeString(), "Starting Vod saving createVods");
+  console.info(new Date(Date.now()).toLocaleTimeString(), "Starting Vod saving createVods");
 
   let failed = 0;
   try {
@@ -164,13 +164,13 @@ async function addVodsToDB() {
     let recentFiles = await scanFolder();
 
     if (!serverUp) {
-      console.log("Ant Media not up, exiting")
+      console.info("Ant Media not up, exiting")
       prevFailedFiles = [...recentFiles, ...prevFailedFiles]
       return
     }
 
     recentFiles = [...prevFailedFiles, ...recentFiles]
-    console.log(`Found ${recentFiles.length} vods to be added to database`)
+    console.info(`Found ${recentFiles.length} vods to be added to database`)
 
     prevFailedFiles = []
     const promise = []
@@ -193,7 +193,7 @@ async function addVodsToDB() {
     setTimeout(addVodsToDB, CHECK_INTERVAL)
 
   } catch (error) {
-    console.log(error)
+    console.error(error)
     console.error(`Falied to add ${failed} VODs, will try next time`);
     setTimeout(addVodsToDB, CHECK_INTERVAL / 4)
   }
@@ -215,7 +215,7 @@ const toggleStream = (id, record) => {
       if (data.success) return resolve(id)
       throw new Error(`${id} Unable to toggle stream status`)
     } catch (err) {
-      console.log(err)
+      console.error(err)
 
       return reject(id)
     }
@@ -235,19 +235,19 @@ const isServerUp = () => {
       else throw new Error("Server responsed with no-200 error code")
 
     } catch (err) {
-      console.log("Server down")
+      console.error("Server down")
       resolve(false)
     }
   })
 }
 
 const createVods = async () => {
-  console.log(new Date(Date.now()).toLocaleTimeString(), "Starting Vod creation createVods", streamsUnableToStart.size, 'camera were not able to start recording last time')
+  console.info(new Date(Date.now()).toLocaleTimeString(), "Starting Vod creation createVods", streamsUnableToStart.size, 'camera were not able to start recording last time')
 
   const serverUp = await isServerUp()
 
   if (!serverUp) {
-    console.log("Ant Media not up, exiting")
+    console.info("Ant Media not up, exiting")
     return
   }
 
@@ -261,7 +261,7 @@ const createVods = async () => {
     ).json()
   ).number
 
-  console.log('Currently active streams ', activeStreams)
+  console.info('Currently active streams ', activeStreams)
 
   let promises = []
 
@@ -270,7 +270,7 @@ const createVods = async () => {
   for (let i = 0; i < pages; i++) {
     const promise = new Promise(async (resolve, reject) => {
       try {
-        console.log('Query result for page', i)
+        console.info('Query result for page', i)
         const renableStreams = []
         const offset = i * streamPerPage
         const size = streamPerPage
@@ -296,7 +296,7 @@ const createVods = async () => {
         console.log('-----')
         data.forEach(result => {
           if (result.status === 'fulfilled') {
-            console.log(result.value, 'recording stopped')
+            console.info(result.value, 'recording stopped')
             renableStreams.push(result.value)
           }
         })
@@ -316,14 +316,14 @@ const createVods = async () => {
         console.log('-----')
         data.forEach(result => {
           if (result.status !== 'fulfilled') {
-            console.log(result.reason, 'recording unable to start')
+            console.info(result.reason, 'recording unable to start')
             streamsUnableToStart.add(result.reason)
           }
         })
 
         resolve(true)
       } catch (err) {
-        console.log(err)
+        console.error(err)
         reject(false)
       }
     })
@@ -346,7 +346,7 @@ const createVods = async () => {
   console.log('-----')
   data.forEach(result => {
     if (result.status === 'fulfilled') {
-      console.log(result.value, 'recording started')
+      console.info(result.value, 'recording started')
       streamsUnableToStart.delete(result.value)
     }
   })
@@ -355,6 +355,7 @@ const createVods = async () => {
 }
 
 async function syncStorage() {
+  console.info(new Date(Date.now()).toLocaleTimeString(), "Starting Storage sync service")
   try {
     const files = await scanFolder()
 
@@ -363,14 +364,15 @@ async function syncStorage() {
       const file = await db.findRecordByFileName(files[i].name)
 
       if (!file) {
-        fs.unlink(file.path, (err) => {
+        console.info("Removing file", files[i].name)
+        fs.unlink(files[i].path, (err) => {
           if (err) console.error("Unable to remove file, not enough permission")
         })
       }
     }
     setTimeout(syncStorage, SYNC_TIME)
   } catch (err) {
-    console.log("Failed to synchronize db", err)
+    console.error("Failed to synchronize db", err)
     setTimeout(syncStorage, ERR_SYNC_TIME)
   }
 }
