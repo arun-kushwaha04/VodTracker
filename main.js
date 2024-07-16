@@ -135,6 +135,9 @@ async function deleteVod(vodId) {
   })
 }
 
+async function checkValidVod(streamId) {
+  return db.getStream(streamId)
+}
 
 async function storeFileInfo(file, fileInfo, duration, vodId) {
   return new Promise(async (resolve, reject) => {
@@ -177,6 +180,9 @@ const addVodToStore = (file) => {
     try {
       const fileInfo = extractFileInfo(file.name);
       const duration = await getVideoDuration(file.path);
+      const streamId = file.name.split('-')[0]
+      const id = await checkValidVod(streamId)
+      if (!id) resolve()
       const vodId = await getVodId(file)
       await storeFileInfo(file, fileInfo, duration, vodId);
       resolve(true)

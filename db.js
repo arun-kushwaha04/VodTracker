@@ -20,6 +20,15 @@ class VodService {
     this.prisma = new PrismaClient();
   }
 
+  getDevice = (deviceId) => this.prisma.device.findUnique({
+    where: {
+      id: deviceId
+    },
+    select: {
+      id: true
+    }
+  })
+
   getChannelInfo = (streamId) => this.prisma.stream.findUnique({
     where: {
       id: streamId
