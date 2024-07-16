@@ -159,7 +159,7 @@ async function storeFileInfo(file, fileInfo, duration, vodId) {
       await db.createRecord(
         vodId,
         channel.Channel.deviceId,
-        channel.id,
+        channel.Channel.id,
         fileUrl,
         file.size,
         duration
@@ -197,7 +197,7 @@ const addVodToStore = (file) => {
 }
 
 async function addVodsToDB() {
-  console.info(new Date(Date.now()).toLocaleTimeString(), "Starting Vod saving createVods");
+  console.info(new Date(Date.now()).toLocaleTimeString(), "Starting VOD saving service");
 
   let failed = 0;
   try {
@@ -401,8 +401,15 @@ async function syncStorage() {
   try {
     const files = await scanFolder(true)
     for (let i = 0; i < files.length; i++) {
-      const vodId = await getVodId(files[i])
-      await deleteVod(vodId)
+      const streamId = files[i].name.split('-')[0]
+      const id = await checkValidVod(streamId)
+      if (!id) {
+        const vodId = await getVodId(files[i])
+        await deleteVod(vodId)
+      } else {
+        //store to db
+        await addVodToStore(files[i])
+      }
     }
     setTimeout(syncStorage, SYNC_TIME)
   } catch (err) {
