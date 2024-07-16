@@ -44,7 +44,7 @@ app.get('/', (req, res) => {
   res.send('Web hook running')
 })
 
-const addToQueue = async () => {
+const addToQueue = async (body) => {
 
   const unlock = await UpdateQueue.Lock()
   UpdateQueue.add(body.id, body.timestamp, true)
@@ -63,12 +63,12 @@ app.post('/update', async (req, res) => {
     switch (body.action) {
       case "liveStreamStarted":
         console.log("Starting live stream", body.id, body.timestamp)
-        addToQueue()
+        addToQueue(body)
         break;
 
       case "liveStreamEnded":
         console.log("Live stream ended", body.id, body.timestamp)
-        addToQueue()
+        addToQueue(body)
         break;
 
       default:
