@@ -182,7 +182,10 @@ const addVodToStore = (file) => {
       const duration = await getVideoDuration(file.path);
       const streamId = file.name.split('-')[0]
       const id = await checkValidVod(streamId)
-      if (!id) resolve()
+      if (!id) {
+        console.info("Invalid Vod, skipping", file.path)
+        resolve()
+      }
       const vodId = await getVodId(file)
       await storeFileInfo(file, fileInfo, duration, vodId);
       resolve(true)
