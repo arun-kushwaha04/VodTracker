@@ -1,12 +1,13 @@
 // server for webhook
 //
 require('dotenv').config()
-const { PrismaClient } = require('@prisma/client');
 const express = require('express');
 const { default: main } = require('./main');
-const { TT_TIME, DB_SAVE_TIME } = require("./config")
+const { TT_TIME, DB_SAVE_TIME } = require("./config");
+const { StreamService } = require('./db');
 
 const UpdateQueue = new PriorityQueue()
+const db = new StreamService()
 
 const saveToDB = async () => {
   const unlock = await this.mutex()
@@ -18,14 +19,7 @@ const saveToDB = async () => {
       if (!element) break
 
       try {
-        await prisma.stream.update({
-          where: {
-            id: element.streamId
-          },
-          data: {
-            isOnline: element.status
-          }
-        })
+        await db.updateRecord(element.streamId, element.status)
         console.info("Updated status for stream ", element.streamId, element.status)
       }
       catch (err) {
@@ -42,8 +36,6 @@ const saveToDB = async () => {
 
 const app = express()
 const port = process.env.WEBHOOK_PORT
-
-const prisma = new PrismaClient();
 
 app.use(express.json())
 

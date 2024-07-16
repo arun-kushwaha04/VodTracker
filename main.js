@@ -1,13 +1,14 @@
+import { VodService } from './db';
+
 require('dotenv').config()
 
-const { PrismaClient } = require('@prisma/client');
 const fs = require('fs-extra');
 const path = require('path');
 const { getVideoDurationInSeconds } = require('get-video-duration')
 
 const { FOLDER_PATH, TOKEN, CHECK_INTERVAL, PREV_FILES, RECORDED_SEGMENT_SIZE, DELAY, SYNC_TIME, ERR_SYNC_TIME } = require("./config")
 
-const prisma = new PrismaClient();
+
 
 let prevFailedFiles = []
 const streamsUnableToStart = new Set() // this array has all stream which were were recording earlier but are unable to re-record after stopping we need to explicitly rehandle it.
@@ -29,6 +30,7 @@ const delay = ms => {
   })
 }
 
+const db = new VodService()
 
 function getThresholdTime() {
   const now = new Date();
@@ -108,38 +110,24 @@ async function storeFileInfo(file, fileInfo, duration, vodId) {
       const { streamId } = fileInfo;
       const fileUrl = file.name;
 
-      const channel = await prisma.stream.findUnique({
-        where: {
-          id: streamId
-        },
-        select: {
-          Channel: true
-        }
-      })
+      const channel = await db.getChannelInfo(streamId)
 
       if (channel === null) return
 
-      const value = await prisma.recording.findFirst({
-        where: {
-          vodId: vodId
-        }
-      })
+      const value = await db.getRecordByVodId(vodId)
       if (value != null) {
         resolve(false)
         return
       }
 
-
-      await prisma.recording.create({
-        data: {
-          vodId,
-          deviceId: channel.Channel.deviceId,
-          channelId: channel.id,
-          fileUrl,
-          size: file.size,
-          duration: duration,
-        },
-      });
+      await db.createRecord(
+        vodId,
+        channel.Channel.deviceId,
+        channel.id,
+        fileUrl,
+        file.size,
+        duration
+      )
 
       console.log("Stored vod", file.name)
       resolve(true)
@@ -208,8 +196,6 @@ async function addVodsToDB() {
     console.log(error)
     console.error(`Falied to add ${failed} VODs, will try next time`);
     setTimeout(addVodsToDB, CHECK_INTERVAL / 4)
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -373,11 +359,8 @@ async function syncStorage() {
     const files = await scanFolder()
 
     for (let i = 0; i < files.size(); i++) {
-      const file = await prisma.recording.findUnique({
-        where: {
-          fileUrl: files[i].name
-        }
-      })
+
+      const file = await db.findRecordByFileName(files[i].name)
 
       if (!file) {
         fs.unlink(path.join(FOLDER_PATH, file), (err) => {
