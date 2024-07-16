@@ -44,6 +44,13 @@ app.get('/', (req, res) => {
   res.send('Web hook running')
 })
 
+const addToQueue = async () => {
+
+  const unlock = await this.mutex()
+  UpdateQueue.add(body.id, body.timestamp, true)
+  unlock()
+
+}
 
 app.post('/update', async (req, res) => {
   try {
@@ -58,32 +65,23 @@ app.post('/update', async (req, res) => {
     switch (body.action) {
       case "liveStreamStarted":
         console.log("Starting live stream", body.id, body.timestamp)
-          (async () => {
-            const unlock = await this.mutex()
-            UpdateQueue.add(body.id, body.timestamp, true)
-            unlock()
-          })()
+        addToQueue()
         break;
 
       case "liveStreamEnded":
         console.log("Live stream ended", body.id, body.timestamp)
-          (async () => {
-            const unlock = await this.mutex()
-            UpdateQueue.add(body.id, body.timestamp, false)
-            unlock()
-          })()
+        addToQueue()
         break;
 
       default:
         break;
     }
 
+    req.status(200).send("Success")
+
   } catch (err) {
     console.error(err)
-    req.json({
-      success: false,
-      status: 500
-    })
+    req.status(500).send("Error")
   }
 })
 
