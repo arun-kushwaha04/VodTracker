@@ -60,7 +60,7 @@ class PriorityQueue {
     element = this.items.shift()
     return element
   }
-  async isEmpty() {
+  isEmpty() {
     return this.items.length === 0
   }
   front() {

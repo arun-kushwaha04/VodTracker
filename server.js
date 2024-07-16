@@ -16,11 +16,10 @@ const saveToDB = async () => {
   let count = 0;
   if (!UpdateQueue.isEmpty()) {
     const updateBeforeTime = (+new Date()) - TT_TIME
-
     while (!UpdateQueue.isEmpty()) {
       const element = UpdateQueue.addToDB(updateBeforeTime)
       if (!element) break
-
+      console.log(element, "to update status")
       try {
         await db.updateRecord(element.streamId, element.status)
         count++
