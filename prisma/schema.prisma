@@ -1,0 +1,133 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-1.1.x", "rhel-openssl-3.0.x"]
+  previewFeatures = ["relationJoins"]
+}
+
+enum CameraType {
+  NVR
+  IP
+}
+
+enum StreamType {
+  MainStream
+  SubStream1
+  SubStream2
+  SubStream3
+}
+
+model GlobalConfig {
+  id              String @id @default(cuid())
+  pricePerCamera  Int    @default(5)
+  pricePerStorage Int    @default(10)
+  currency        String @default("USD")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String    @unique
+  password     String
+  organization String?
+  phone        String    @unique
+  address      String?
+  zipcode      String?
+  country      String?
+  timezone     String    @default("Asia/Kolkata")
+  currency     String?
+  Config       Config[]
+  Account      Account[]
+  Invoice      Invoice[]
+  Group        Group[]
+  Device       Device[]
+}
+
+model Config {
+  userId            String  @id @unique
+  cloudRecording    Boolean @default(false)
+  recordingDuration Int     @default(21000)
+  recordingDays     Int     @default(15)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  userId       String @id @unique
+  totalCamera  Int    @default(0)
+  totalStorage BigInt @default(0)
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  issueDate DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id     String   @id @default(cuid())
+  userId String
+  name   String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Device Device[]
+
+  @@unique(name: "groupCompoundId", [userId, name])
+}
+
+model Device {
+  id           String      @id @default(cuid())
+  groupId      String
+  userId       String
+  name         String
+  username     String
+  password     String
+  ip           String
+  port         Int         @default(80)
+  type         CameraType  @default(IP)
+  serialNumber String
+  manufacture  String
+  model        String
+  channelCount Int
+  streamCount  Int
+  group        Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Channel      Channel[]
+  Recording    Recording[]
+}
+
+model Channel {
+  id        String   @id @default(cuid())
+  channelId String
+  deviceId  String
+  Streams   Stream[]
+  isOnline  Boolean
+  Device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+}
+
+model Stream {
+  id        String     @id @default(cuid())
+  uri       String
+  channelId String
+  type      StreamType
+  isOnline  Boolean
+  Channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+}
+
+model Recording {
+  id        String   @id @default(cuid())
+  deviceId  String
+  channelId String
+  duration  Float
+  vodId     String   @unique
+  fileUrl   String   @unique
+  size      Int      @default(0)
+  createdAt DateTime @default(now())
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+}
