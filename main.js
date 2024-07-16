@@ -363,7 +363,7 @@ async function syncStorage() {
       const file = await db.findRecordByFileName(files[i].name)
 
       if (!file) {
-        fs.unlink(path.join(FOLDER_PATH, file), (err) => {
+        fs.unlink(file.path, (err) => {
           if (err) console.error("Unable to remove file, not enough permission")
         })
       }
