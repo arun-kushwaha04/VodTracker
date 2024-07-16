@@ -13,7 +13,6 @@ const db = new StreamService()
 const saveToDB = async () => {
   console.log(new Date(Date.now()).toLocaleTimeString(), "Starting service to update stream status")
   const unlock = await UpdateQueue.Lock()
-  console.log("Got lock")
   let count = 0;
   if (!UpdateQueue.isEmpty()) {
     const updateBeforeTime = (+new Date()) - TT_TIME
@@ -21,7 +20,6 @@ const saveToDB = async () => {
     while (!UpdateQueue.isEmpty()) {
       const element = UpdateQueue.addToDB(updateBeforeTime)
       if (!element) break
-      console.log(element, "to update status")
       try {
         await db.updateRecord(element.streamId, element.status)
         count++
@@ -29,7 +27,7 @@ const saveToDB = async () => {
       }
       catch (err) {
         console.error("Failed to upadte status for stream ", element.streamId, element.status, err)
-        UpdateQueue.add(element.streamId, updateBeforeTime, element.status)
+        if (err.code !== 'P2025' && element.tries <= 10) UpdateQueue.add(element.streamId, updateBeforeTime, element.status, element.tries + 1)
       }
     }
   } else {

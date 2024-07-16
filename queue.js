@@ -1,9 +1,10 @@
 // priority queue implementation
 class QueueElement {
-  constructor(streamId, timestamp, status) {
+  constructor(streamId, timestamp, status, tries) {
     this.streamId = streamId
     this.timestamp = timestamp
     this.status = status
+    this.tries = tries
   }
 }
 
@@ -31,8 +32,8 @@ class PriorityQueue {
   Lock() {
     return this.mutex.lock()
   }
-  add(streamId, timestamp, status) {
-    let element = new QueueElement(streamId, timestamp, status)
+  add(streamId, timestamp, status, tries = 0) {
+    let element = new QueueElement(streamId, timestamp, status, tries)
     let contain = false
 
     for (let i = 0; i < this.items.length; i++) {
