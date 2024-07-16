@@ -39,7 +39,7 @@ function getThresholdTime() {
   return new Date(now.getTime() - PREV_FILES);
 }
 
-async function scanFolder() {
+async function scanFolder(getOlder) {
   const files = await fs.readdir(FOLDER_PATH);
   const ttTime = getThresholdTime();
 
@@ -50,13 +50,25 @@ async function scanFolder() {
       const filePath = path.join(FOLDER_PATH, file);
       const stats = await fs.stat(filePath);
 
-      if (stats.birthtime >= ttTime) {
-        recentFiles.push({
-          name: file,
-          path: filePath,
-          size: stats.size,
-          createdAt: stats.birthtime,
-        });
+      if (getOlder) {
+        if (stats.birthtime < ttTime) {
+          recentFiles.push({
+            name: file,
+            path: filePath,
+            size: stats.size,
+            createdAt: stats.birthtime,
+          });
+        }
+      } else {
+        if (stats.birthtime >= ttTime) {
+          recentFiles.push({
+            name: file,
+            path: filePath,
+            size: stats.size,
+            createdAt: stats.birthtime,
+          });
+        }
+
       }
 
     }
@@ -378,22 +390,11 @@ const createVods = async () => {
 async function syncStorage() {
   console.info(new Date(Date.now()).toLocaleTimeString(), "Starting Storage sync service")
   try {
-    const files = await scanFolder()
-    const promises = []
-    files.forEach(file => {
-      promises.push(
-        (async () => {
-          return new Promise(async (resolve, reject) => {
-            try {
-              const vodId = await getVodId(file.name)
-              await deleteVod(vodId)
-            } catch (err) {
-              reject(err)
-            }
-          })
-        })()
-      )
-    })
+    const files = await scanFolder(true)
+    for (let i = 0; i < files.length; i++) {
+      const vodId = await getVodId(files[i])
+      await deleteVod(vodId)
+    }
     setTimeout(syncStorage, SYNC_TIME)
   } catch (err) {
     console.error("Failed to synchronize db", err)
