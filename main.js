@@ -358,7 +358,7 @@ async function syncStorage() {
   try {
     const files = await scanFolder()
 
-    for (let i = 0; i < files.size(); i++) {
+    for (let i = 0; i < files.length; i++) {
 
       const file = await db.findRecordByFileName(files[i].name)
 
