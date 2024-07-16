@@ -6,7 +6,8 @@ const path = require('path');
 const { getVideoDurationInSeconds } = require('get-video-duration')
 const { VodService } = require('./db');
 
-const { FOLDER_PATH, TOKEN, CHECK_INTERVAL, PREV_FILES, RECORDED_SEGMENT_SIZE, DELAY, SYNC_TIME, ERR_SYNC_TIME } = require("./config")
+const { FOLDER_PATH, TOKEN, CHECK_INTERVAL, PREV_FILES, RECORDED_SEGMENT_SIZE, DELAY, SYNC_TIME, ERR_SYNC_TIME } = require("./config");
+const { spawn } = require('child_process');
 
 
 
@@ -18,6 +19,7 @@ const serverAddr = process.env.SERVER_ADDR
 
 const serverUpAddr = serverAddr + '/version'
 const activeStreamUri = serverAddr + '/broadcasts/active-live-stream-count'
+const deleteVodReq = (vodId) => serverAddr + `/vods/${vodId}`
 const getVodList = (search) => serverAddr + `/vods/list/0/10?search=${search}`
 const streamListUri = (off, size) => serverAddr + `/broadcasts/list/${off}/${size}`
 const activeRecordingStatus = (id, record) => serverAddr + `/broadcasts/${id}/recording/${record}`
@@ -95,6 +97,25 @@ async function getVodId(file) {
       const data = await res.json()
       if (data.length == 0) throw new Error("Failed to get vods")
       resolve(data[0].vodId)
+    } catch (err) {
+      console.error("Error while getting vod id for", file.name, err)
+      reject(file.name)
+    }
+  })
+}
+
+async function deleteVod(vodId) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const res = await fetch(deleteVodReq(vodId), {
+        method: "DELETE",
+        headers: {
+          Authorization: TOKEN
+        }
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error("Failed to delete vods", vodId)
+      resolve(true)
     } catch (err) {
       console.error("Error while getting vod id for", file.name, err)
       reject(file.name)
@@ -358,18 +379,21 @@ async function syncStorage() {
   console.info(new Date(Date.now()).toLocaleTimeString(), "Starting Storage sync service")
   try {
     const files = await scanFolder()
-
-    for (let i = 0; i < files.length; i++) {
-
-      const file = await db.findRecordByFileName(files[i].name)
-
-      if (!file) {
-        console.info("Removing file", files[i].name)
-        fs.unlink(files[i].path, (err) => {
-          if (err) console.error("Unable to remove file, not enough permission")
-        })
-      }
-    }
+    const promises = []
+    files.forEach(file => {
+      promises.push(
+        (async () => {
+          return new Promise(async (resolve, reject) => {
+            try {
+              const vodId = await getVodId(file.name)
+              await deleteVod(vodId)
+            } catch (err) {
+              reject(err)
+            }
+          })
+        })()
+      )
+    })
     setTimeout(syncStorage, SYNC_TIME)
   } catch (err) {
     console.error("Failed to synchronize db", err)
@@ -378,9 +402,12 @@ async function syncStorage() {
 }
 
 const main = () => {
-  createVods().then(() => {
-    addVodsToDB()
-    syncStorage()
+  syncStorage().then(async () => {
+    await delay(5000)
+    createVods().then(async () => {
+      await delay(5000)
+      addVodsToDB()
+    })
   })
 }
 
