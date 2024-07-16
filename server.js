@@ -46,7 +46,7 @@ app.get('/', (req, res) => {
 
 const addToQueue = async () => {
 
-  const unlock = await this.mutex()
+  const unlock = await UpdateQueue.Lock()
   UpdateQueue.add(body.id, body.timestamp, true)
   unlock()
 
@@ -55,8 +55,6 @@ const addToQueue = async () => {
 app.post('/update', async (req, res) => {
   try {
     const body = req.body
-
-    console.log("Update from antmedia", body)
 
     // streamName = deviceId channelId channelName channelType
     // change channel online status for main stream only
@@ -77,11 +75,11 @@ app.post('/update', async (req, res) => {
         break;
     }
 
-    req.status(200).send("Success")
+    res.status(200).send("Success")
 
   } catch (err) {
     console.error(err)
-    req.status(500).send("Error")
+    res.status(500).send("Error")
   }
 })
 
