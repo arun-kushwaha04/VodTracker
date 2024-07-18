@@ -12,6 +12,7 @@ generator client {
 enum CameraType {
   NVR
   IP
+  RTMP
 }
 
 enum StreamType {
@@ -82,18 +83,19 @@ model Group {
 }
 
 model Device {
-  id           String      @id @default(cuid())
-  groupId      String
-  userId       String
-  name         String
-  username     String
-  password     String
-  ip           String
-  port         Int         @default(80)
+  id      String @id @default(cuid())
+  groupId String
+  userId  String
+
+  name         String?
+  username     String?
+  password     String?
+  ip           String?
+  port         Int?        @default(80)
   type         CameraType  @default(IP)
-  serialNumber String
-  manufacture  String
-  model        String
+  serialNumber String?
+  manufacture  String?
+  model        String?
   channelCount Int
   streamCount  Int
   group        Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -107,7 +109,7 @@ model Channel {
   channelId String
   deviceId  String
   Streams   Stream[]
-  isOnline  Boolean
+  isOnline  Boolean  @default(false)
   Device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 }
 
@@ -116,7 +118,7 @@ model Stream {
   uri       String
   channelId String
   type      StreamType
-  isOnline  Boolean
+  isOnline  Boolean    @default(false)
   Channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
 }
 
@@ -127,7 +129,7 @@ model Recording {
   duration  Float
   vodId     String   @unique
   fileUrl   String   @unique
-  size      Int      @default(0)
+  size      BigInt   @default(0)
   createdAt DateTime @default(now())
   device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 }
